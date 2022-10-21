@@ -2,60 +2,27 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+
+// Our project headers
+#include "TransformChar.hpp"
+#include "processCommandLine.hpp"
 
 int main(int argc, char* argv[])
 {
     // Convert the command-line arguments into a more easily usable form
     const std::vector<std::string> cmdLineArgs{argv, argv + argc};
-    const std::size_t nCmdLineArgs{cmdLineArgs.size()};
-
+    
     // Options that might be set by the command-line arguments
     bool helpRequested{false};
     bool versionRequested{false};
     std::string inputFile{""};
     std::string outputFile{""};
 
-    // Process command line arguments - ignore zeroth element, as we know this
-    // to be the program name and don't need to worry about it
-    for (std::size_t i{1}; i < nCmdLineArgs; ++i) {
-        if (cmdLineArgs[i] == "-h" || cmdLineArgs[i] == "--help") {
-            helpRequested = true;
-        } else if (cmdLineArgs[i] == "--version") {
-            versionRequested = true;
-        } else if (cmdLineArgs[i] == "-i") {
-            // Handle input file option
-            // Next element is filename unless "-i" is the last argument
-            if (i == nCmdLineArgs - 1) {
-                std::cerr << "[error] -i requires a filename argument"
-                          << std::endl;
-                // exit main with non-zero return to indicate failure
-                return 1;
-            } else {
-                // Got filename, so assign value and advance past it
-                inputFile = cmdLineArgs[i + 1];
-                ++i;
-            }
-        } else if (cmdLineArgs[i] == "-o") {
-            // Handle output file option
-            // Next element is filename unless "-o" is the last argument
-            if (i == nCmdLineArgs - 1) {
-                std::cerr << "[error] -o requires a filename argument"
-                          << std::endl;
-                // exit main with non-zero return to indicate failure
-                return 1;
-            } else {
-                // Got filename, so assign value and advance past it
-                outputFile = cmdLineArgs[i + 1];
-                ++i;
-            }
-        } else {
-            // Have an unknown flag to output error message and return non-zero
-            // exit status to indicate failure
-            std::cerr << "[error] unknown argument '" << cmdLineArgs[i]
-                      << "'\n";
-            return 1;
-        }
-    }
+    //call processCommandLine here
+    if(processCommandLine(cmdLineArgs, helpRequested, versionRequested, inputFile, outputFile)==false){
+        return 1;
+    };
 
     // Handle help, if requested
     if (helpRequested) {
@@ -84,72 +51,61 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    // Initialise variables
-    char inputChar{'x'};
-    std::string inputText;
-
-    // Read in user input from stdin/file
+    
     // Warn that input file option not yet implemented
-    if (!inputFile.empty()) {
-        std::cerr << "[warning] input from file ('" << inputFile
-                  << "') not implemented yet, using stdin\n";
-    }
+    std::string inputText{""};
 
-    // loop over each character from user input
-    while (std::cin >> inputChar) {
-        // Uppercase alphabetic characters
-        if (std::isalpha(inputChar)) {
-            inputText += std::toupper(inputChar);
-            continue;
+    // Read in user input from stdin
+    if (inputFile.empty()) {
+        std::cerr << "No input file, specified, using std/in: \n";
+    
+        // Print out the transliterated text
+        char in_char{'x'};
+        
+        while (std::cin >> in_char) {
+            inputText += transformChar(in_char);
+        
         }
-
-        // Transliterate digits to English words
-        switch (inputChar) {
-            case '0':
-                inputText += "ZERO";
-                break;
-            case '1':
-                inputText += "ONE";
-                break;
-            case '2':
-                inputText += "TWO";
-                break;
-            case '3':
-                inputText += "THREE";
-                break;
-            case '4':
-                inputText += "FOUR";
-                break;
-            case '5':
-                inputText += "FIVE";
-                break;
-            case '6':
-                inputText += "SIX";
-                break;
-            case '7':
-                inputText += "SEVEN";
-                break;
-            case '8':
-                inputText += "EIGHT";
-                break;
-            case '9':
-                inputText += "NINE";
-                break;
+        
+        
+    }
+    // Read in user input from file
+    else{
+        std::ifstream in_file {inputFile};
+        bool ok_to_read=in_file.good();
+        if (ok_to_read == true){
+            char inputChar {'x'};
+        
+            while (in_file >> inputChar){
+                inputText += transformChar(inputChar);
+            }
+            
         }
-
-        // If the character isn't alphabetic or numeric, DONT add it
+        else{
+            std::cerr << "[error] Could not read input file \n";
+            return 1;
+        }
     }
-
-    // Print out the transliterated text
-
-    // Warn that output file option not yet implemented
-    if (!outputFile.empty()) {
-        std::cerr << "[warning] output to file ('" << outputFile
-                  << "') not implemented yet, using stdout\n";
+    
+    // Outputting, printing if no output file, else printing to file
+    if (outputFile.empty()) {
+        std::cout << "No output file, specified, printing to terminal" << std::endl;
+        std::cout << inputText << std::endl;
     }
+    else{
+        std::ofstream out_file {outputFile};
+        bool ok_to_write = out_file.good();
+        if(ok_to_write==true){
+            out_file << inputText;
+        }
+        else{
+            std::cerr << "[error] Could not write to output file \n";
+            return 1;
 
-    std::cout << inputText << std::endl;
-
+        }
+    
+    
+    }
     // No requirement to return from main, but we do so for clarity
     // and for consistency with other functions
     return 0;
