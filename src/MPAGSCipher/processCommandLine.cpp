@@ -2,7 +2,7 @@
 #include "processCommandLine.hpp"
 
 
-bool processCommandLine(const std::vector<std::string> &args, bool& helpRequested, bool&versionRequested, std::string& inputFileName, std::string& outputFileName){
+bool processCommandLine(const std::vector<std::string> &args, bool& helpRequested, bool&versionRequested, std::string& inputFileName, std::string& outputFileName,  bool&encryption, bool&decryption, std::string& key){
 // Process command line arguments - ignore zeroth element, as we know this
     const std::size_t nCmdLineArgs{args.size()};
     
@@ -38,6 +38,34 @@ bool processCommandLine(const std::vector<std::string> &args, bool& helpRequeste
                 outputFileName = args[i + 1];
                 ++i;
             }
+        } else if (args[i] == "-e"){
+            // Handle encryption
+            encryption = true;
+            // Next element is key unless this is last argument
+            if (i == nCmdLineArgs - 1) {
+                std::cerr << "[error] -e requires key argument"
+                          << std::endl;
+                // exit main with non-zero return to indicate failure
+                return false;
+            } else {
+                // Got key, so assign value and advance past it
+                key = args[i + 1];
+                ++i;
+            }
+        } else if (args[i] == "-d"){
+            // Handle decryption
+            decryption = true;
+            // Next element is key unless this is last argument
+            if (i == nCmdLineArgs - 1) {
+                std::cerr << "[error] -d requires key argument"
+                          << std::endl;
+                // exit main with non-zero return to indicate failure
+                return false;
+            } else {
+                // Got key, so assign value and advance past it
+                key = args[i + 1];
+                ++i;
+            }    
         } else {
             // Have an unknown flag to output error message and return non-zero
             // exit status to indicate failure
